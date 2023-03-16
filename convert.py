@@ -1,12 +1,9 @@
-import datetime
-import math
-import struct
 import os
-import numpy as np
-
-
+import math
 import argparse
-from pathlib import Path
+import datetime
+import struct
+import numpy as np
 
 
 def cli():
@@ -15,9 +12,11 @@ def cli():
         "path", help="Specify the path to the .kn5 model directory.")
 
     args = parser.parse_args()
-    target_dir = Path(args.path)
+    target_dir = os.path.abspath(args.path)
 
-    if not target_dir.exists():
+    print(target_dir)
+
+    if not os.path.exists(target_dir):
         print("The model directory doesn't exist")
         raise SystemExit(1)
 
@@ -523,19 +522,4 @@ def convert_to_obj(file_path):
 
 
 if __name__ == "__main__":
-    # For hardcoded file names, uncomment:
-
-    #     model_name = "my-model.kn5"
-    #     folder_path = f"./models/{model_name}/"
-    #     extension = ".kn5"
-
-    #     # List all files in the folder with the specified extension
-    #     files = [file for file in os.listdir(
-    #         folder_path) if file.endswith(extension)]
-
-    #     # Print each file name
-    #     for file in files:
-    #         convert_to_obj(os.path.join(folder_path, file))
-
-    # Use CLI arguments
     cli()
