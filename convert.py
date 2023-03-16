@@ -5,6 +5,34 @@ import os
 import numpy as np
 
 
+import argparse
+from pathlib import Path
+
+
+def cli():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "path", help="Specify the path to the .kn5 model directory.")
+
+    args = parser.parse_args()
+    target_dir = Path(args.path)
+
+    if not target_dir.exists():
+        print("The model directory doesn't exist")
+        raise SystemExit(1)
+
+    # Filter by .kn5 extension
+    extension = ".kn5"
+
+    # List all files in the folder with the specified extension
+    files = [os.path.join(target_dir, file) for file in os.listdir(
+        target_dir) if file.endswith(extension)]
+
+    # Print each file name
+    for file in files:
+        convert_to_obj(file)
+
+
 class kn5Material:
     def __init__(self):
         self.name = ""
@@ -495,14 +523,19 @@ def convert_to_obj(file_path):
 
 
 if __name__ == "__main__":
-    model_name = "my-model.kn5"
-    folder_path = f"./models/{model_name}/"
-    extension = ".kn5"
+    # For hardcoded file names, uncomment:
 
-    # List all files in the folder with the specified extension
-    files = [file for file in os.listdir(
-        folder_path) if file.endswith(extension)]
+    #     model_name = "my-model.kn5"
+    #     folder_path = f"./models/{model_name}/"
+    #     extension = ".kn5"
 
-    # Print each file name
-    for file in files:
-        convert_to_obj(os.path.join(folder_path, file))
+    #     # List all files in the folder with the specified extension
+    #     files = [file for file in os.listdir(
+    #         folder_path) if file.endswith(extension)]
+
+    #     # Print each file name
+    #     for file in files:
+    #         convert_to_obj(os.path.join(folder_path, file))
+
+    # Use CLI arguments
+    cli()
