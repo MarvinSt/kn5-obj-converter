@@ -189,7 +189,9 @@ def read_nodes(file, node_list, parent_id):
         for v in range(new_node.vertexCount):
             new_node.position.extend(struct.unpack('<fff', file.read(12)))
             new_node.normal.extend(struct.unpack('<fff', file.read(12)))
-            new_node.texture0.extend(struct.unpack('<ff', file.read(8)))
+            tex = struct.unpack('<ff', file.read(8))
+            tex = (tex[0], 1.0 - tex[1])
+            new_node.texture0.extend(tex)
             # file.seek(12, 1)  # tangents
             file.read(12)
 
@@ -218,7 +220,9 @@ def read_nodes(file, node_list, parent_id):
         for v in range(new_node.vertexCount):
             new_node.position.extend(struct.unpack('<fff', file.read(12)))
             new_node.normal.extend(struct.unpack('<fff', file.read(12)))
-            new_node.texture0.extend(struct.unpack('<ff', file.read(8)))
+            tex = struct.unpack('<ff', file.read(8))
+            tex = (tex[0], 1.0 - tex[1])
+            new_node.texture0.extend(tex)
             # file.seek(44, 1)  # tangents & weights
             file.read(44)
 
