@@ -81,14 +81,16 @@ def read_string(file, length):
 
 
 def matrix_mult(ma, mb):
-    mm = [[0.0 for j in range(4)] for i in range(4)]
+    return np.matmul(np.array(ma, copy=True), np.array(mb, copy=True))
 
-    for i in range(4):
-        for j in range(4):
-            mm[i][j] = ma[i][0] * mb[0][j] + ma[i][1] * \
-                mb[1][j] + ma[i][2] * mb[2][j] + ma[i][3] * mb[3][j]
+    # mm = [[0.0 for j in range(4)] for i in range(4)]
 
-    return mm
+    # for i in range(4):
+    #     for j in range(4):
+    #         mm[i][j] = ma[i][0] * mb[0][j] + ma[i][1] * \
+    #             mb[1][j] + ma[i][2] * mb[2][j] + ma[i][3] * mb[3][j]
+
+    # return mm
 
 
 def matrix_to_euler(transf):
