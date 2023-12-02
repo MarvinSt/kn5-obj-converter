@@ -5,6 +5,10 @@ import datetime
 import struct
 import numpy as np
 
+# Shaders are not implemented correctly here
+# For future reference the following resource can be followed to fix the shaders:
+# https://assettocorsamods.net/threads/assetto-corsa-shaders-texture-maps-list.794/
+
 
 def cli():
     parser = argparse.ArgumentParser()
@@ -47,7 +51,18 @@ class kn5Material:
         self.txDiffuse = ""
         self.txNormal = ""
         self.txDetail = ""
+
+        self.txDetailR = ""
+        self.txDetailG = ""
+        self.txDetailB = ""
+        self.txDetailA = ""
+        self.txDetailNM = ""
+
+        self.txMask = ""
         self.shader_props = ""
+        # not implemented...
+        self.ksEmissive = 0.0
+        self.ksAlphaRef = 1.0
 
 
 class kn5Node:
@@ -250,6 +265,24 @@ def read_nodes(file, node_list, parent_id):
     return node_list
 
 
+def transparant_shader(shader) -> bool:
+    if shader.startswith("ksPerPixelAT"):
+        return True
+    if shader == 'ksPerPixelAlpha':
+        return True
+    if shader == 'ksSkidMark':
+        return True
+    if shader == 'ksTree':
+        return True
+    if shader == 'ksGrass':
+        return True
+    if shader == 'ksFlags':
+        return True
+    
+    return False
+
+
+
 def export_obj(model_name, output_dir, materials: list[kn5Material], nodes: list[kn5Node]):
     model_filename = model_name
 
@@ -260,6 +293,10 @@ def export_obj(model_name, output_dir, materials: list[kn5Material], nodes: list
         os.mkdir(output_dir)
 
     skip_ac_nodes = True
+
+    shader_types = set()
+    for src_mat in materials:
+        shader_types.add(src_mat.shader)
 
     print('Exporting {}.obj'.format(model_filename))
 
@@ -278,22 +315,49 @@ def export_obj(model_name, output_dir, materials: list[kn5Material], nodes: list
                 src_mat.ksSpecular, src_mat.ksSpecular, src_mat.ksSpecular)
             mtl_str += 'Ns {}\r\n'.format(src_mat.ksSpecularEXP)
             mtl_str += 'illum 2\r\n'
+
+            is_transparant = transparant_shader(src_mat.shader)
+
+            # if src_mat.name == "Trees":
+            #     aaaaa = 1
+
+            # else:
+            if is_transparant:
+                mtl_str += 'd 0.9999\r\n'
+
             if src_mat.useDetail == 1.0 and src_mat.txDetail:
                 mtl_str += 'map_Kd texture\\{}\r\n'.format(
                     src_mat.txDetail)
-                mtl_str += 'map_d texture\\{}\r\n'.format(
-                    src_mat.txDetail)
+                # mtl_str += 'map_d texture\\{}\r\n'.format(
+                #     src_mat.txDetail)
+
                 if src_mat.txDiffuse:
                     mtl_str += 'map_Ks texture\\{}\r\n'.format(
                         src_mat.txDiffuse)
+
+                # if src_mat.txMask:
+                #     mtl_str += 'map_d texture\\{}\r\n'.format(
+                #         src_mat.txMask)
+
+                if is_transparant:
+                    mtl_str += 'map_d texture\\{}\r\n'.format(
+                        src_mat.txDetailA)
+
             elif src_mat.txDiffuse:
                 mtl_str += 'map_Kd texture\\{}\r\n'.format(
                     src_mat.txDiffuse)
-                mtl_str += 'map_d texture\\{}\r\n'.format(
-                    src_mat.txDiffuse)
+
+                # if src_mat.txMask:
+                #     mtl_str += 'map_d texture\\{}\r\n'.format(
+                #         src_mat.txMask)
+
+                if is_transparant:
+                    mtl_str += 'map_d texture\\{}\r\n'.format(
+                        src_mat.txDiffuse)
+
             if src_mat.txNormal:
                 mtl_str += 'bump texture\\{}\r\n'.format(src_mat.txNormal)
-            mtl_str += 'd 0.9999\r\n'
+
             mtl_str += '\r\n'
 
         mtl_writer.write(mtl_str)
@@ -349,6 +413,10 @@ def export_obj(model_name, output_dir, materials: list[kn5Material], nodes: list
                     nz = srcNode.hmatrix[0][2] * x + \
                         srcNode.hmatrix[1][2] * y + \
                         srcNode.hmatrix[2][2] * z
+                    
+                    # nx = -nx
+                    # ny = -ny
+                    # nz = -nz
 
                     sb += f"vn {nx} {ny} {nz}\n"
 
@@ -418,6 +486,8 @@ def read_kn5(file_path, output_dir):
             tex_size = struct.unpack("<i", file.read(4))[0]
             textures.append(tex_name)
 
+            # print(tex_type)
+
             tex_path = os.path.join(output_dir, "texture", tex_name)
             if os.path.exists(tex_path):
                 file.seek(tex_size, os.SEEK_CUR)
@@ -466,6 +536,13 @@ def read_kn5(file_path, output_dir):
                     new_material.useDetail = prop_value
                 elif prop_name == "detailUVMultiplier":
                     new_material.detailUVMultiplier = prop_value
+                elif prop_name == "ksEmissive":
+                    new_material.ksEmissive = prop_value
+                elif prop_name == "ksAlphaRef":
+                    new_material.ksAlphaRef = prop_value
+                    # print(f"ksAlphaRef: {prop_value}")
+                # else:
+                #     print(f"{prop_name} {prop_value}")
 
                 file.seek(36, os.SEEK_CUR)
 
@@ -485,6 +562,20 @@ def read_kn5(file_path, output_dir):
                     new_material.txNormal = tex_name
                 elif sample_name == "txDetail":
                     new_material.txDetail = tex_name
+                elif sample_name == "txDetailR":
+                    new_material.txDetailR = tex_name
+                elif sample_name == "txDetailG":
+                    new_material.txDetailG = tex_name
+                elif sample_name == "txDetailB":
+                    new_material.txDetailB = tex_name
+                elif sample_name == "txDetailA":
+                    new_material.txDetailA = tex_name
+                elif sample_name == "txDetailNM":
+                    new_material.txDetailNM = tex_name
+                elif sample_name == "txMask":
+                    new_material.txMask = tex_name                
+                # else:
+                #     print(f"{sample_name} {tex_name}")
 
             materials.append(new_material)
 
@@ -529,3 +620,6 @@ def convert_to_obj(file_path):
 
 if __name__ == "__main__":
     cli()
+
+    # file = "./models/daytona_2017/daytonagroove.kn5"
+    # convert_to_obj(file)
